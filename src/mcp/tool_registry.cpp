@@ -1,13 +1,37 @@
 #include "mcp/tool_registry.h"
 #include "core/session.h"
 #include "core/diff_session.h"
+#include <algorithm>
 
 using json = nlohmann::json;
 
 namespace renderdoc::mcp {
 
+namespace {
+
+bool isValidToolName(const std::string& name)
+{
+    if(name.empty() || name.size() > 128)
+        return false;
+
+    return std::all_of(name.begin(), name.end(), [](unsigned char c) {
+        const bool asciiLetter =
+            (c >= static_cast<unsigned char>('A') && c <= static_cast<unsigned char>('Z')) ||
+            (c >= static_cast<unsigned char>('a') && c <= static_cast<unsigned char>('z'));
+        const bool asciiDigit =
+            c >= static_cast<unsigned char>('0') && c <= static_cast<unsigned char>('9');
+        return asciiLetter || asciiDigit || c == '_' || c == '-' || c == '.';
+    });
+}
+
+} // namespace
+
 void ToolRegistry::registerTool(ToolDef def)
 {
+    if(!isValidToolName(def.name))
+        throw std::logic_error(
+            "Invalid MCP tool name (use 1-128 ASCII letters, digits, '_', '-', or '.'): " +
+            def.name);
     if(m_toolIndex.find(def.name) != m_toolIndex.end())
         throw std::logic_error("Duplicate tool name: " + def.name);
     m_toolIndex[def.name] = m_tools.size();
@@ -39,7 +63,7 @@ json ToolRegistry::callTool(const std::string& name,
 {
     auto it = m_toolIndex.find(name);
     if(it == m_toolIndex.end())
-        throw InvalidParamsError("Unknown tool: " + name);
+        throw UnknownToolError("Unknown tool: " + name);
 
     const auto& tool = m_tools[it->second];
     validateArgs(tool, args);

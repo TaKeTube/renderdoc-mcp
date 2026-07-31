@@ -251,7 +251,7 @@ protected:
         initReq["jsonrpc"] = "2.0";
         initReq["id"] = 0;
         initReq["method"] = "initialize";
-        initReq["params"]["protocolVersion"] = "2025-06-18";
+        initReq["params"]["protocolVersion"] = "2025-11-25";
         initReq["params"]["clientInfo"]["name"] = "test-runner";
         initReq["params"]["clientInfo"]["version"] = "1.0.0";
         initReq["params"]["capabilities"] = json::object();
@@ -327,10 +327,12 @@ TEST_F(ProtocolTest, InitializeHandshake)
     auto& result = s_initResponse["result"];
 
     EXPECT_TRUE(result.contains("protocolVersion"));
-    EXPECT_EQ(result["protocolVersion"], "2025-06-18");
+    EXPECT_EQ(result["protocolVersion"], "2025-11-25");
     EXPECT_TRUE(result.contains("serverInfo"));
     EXPECT_TRUE(result["serverInfo"].contains("name"));
     EXPECT_EQ(result["serverInfo"]["name"], "renderdoc-mcp");
+    EXPECT_EQ(result["serverInfo"]["title"], "RenderDoc MCP");
+    EXPECT_TRUE(result["serverInfo"].contains("description"));
 }
 
 TEST_F(ProtocolTest, ToolsListComplete)
@@ -420,7 +422,7 @@ TEST_F(ProtocolTest, MethodNotFound_UnknownMethod)
     EXPECT_EQ((*resp)["error"]["code"].get<int>(), -32601);
 }
 
-TEST_F(ProtocolTest, BatchRequest_ArrayResponse)
+TEST_F(ProtocolTest, BatchRequest_RejectedByLatestProtocol)
 {
     json batch = json::array();
     batch.push_back(makeRequest("tools/list", json::object(), 1));
@@ -428,22 +430,17 @@ TEST_F(ProtocolTest, BatchRequest_ArrayResponse)
 
     auto resp = send(batch);
     ASSERT_TRUE(resp.has_value());
-    ASSERT_TRUE(resp->is_array());
-    EXPECT_EQ(resp->size(), 2u);
+    ASSERT_TRUE(resp->contains("error"));
+    EXPECT_EQ((*resp)["error"]["code"], -32600);
+}
 
-    // Find responses by id
-    bool foundToolsList = false;
-    bool foundMethodNotFound = false;
-    for (auto& r : *resp) {
-        if (r.contains("id")) {
-            if (r["id"] == 1 && r.contains("result"))
-                foundToolsList = true;
-            if (r["id"] == 2 && r.contains("error") && r["error"]["code"] == -32601)
-                foundMethodNotFound = true;
-        }
-    }
-    EXPECT_TRUE(foundToolsList) << "Batch should contain tools/list result";
-    EXPECT_TRUE(foundMethodNotFound) << "Batch should contain method-not-found error";
+TEST_F(ProtocolTest, Ping_ReturnsEmptyResult)
+{
+    auto resp = send(makeRequest("ping"));
+    ASSERT_TRUE(resp.has_value());
+    ASSERT_TRUE(resp->contains("result"));
+    EXPECT_TRUE((*resp)["result"].is_object());
+    EXPECT_TRUE((*resp)["result"].empty());
 }
 
 TEST_F(ProtocolTest, ProcessStable_MultipleRequests)

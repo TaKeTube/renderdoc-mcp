@@ -12,8 +12,15 @@ namespace renderdoc::core { class DiffSession; }
 
 namespace renderdoc::mcp {
 
-// Protocol-level parameter error -- McpServer converts to JSON-RPC -32602
+// Tool argument validation error. MCP 2025-11-25 reports these as tool
+// execution errors so the model can inspect and correct its arguments.
 struct InvalidParamsError : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
+// Looking up a tool that the server does not expose remains a protocol-level
+// invalid-params error.
+struct UnknownToolError : std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
@@ -35,7 +42,8 @@ public:
     void registerTool(ToolDef def);
     nlohmann::json getToolDefinitions() const;
     // Flow: lookup → validateArgs → call handler
-    // InvalidParamsError for validation failures, std::runtime_error for tool errors
+    // UnknownToolError for lookup failures, InvalidParamsError for argument
+    // validation failures, std::runtime_error for tool execution failures.
     nlohmann::json callTool(const std::string& name,
                             ToolContext& ctx,
                             const nlohmann::json& args);

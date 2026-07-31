@@ -78,7 +78,8 @@ int main(int argc, char* argv[])
         json response;
         if(msg.is_array())
         {
-            // JSON-RPC batch
+            // Legacy JSON-RPC batch. McpServer accepts it only after a
+            // 2025-03-26 session has been negotiated.
             if(msg.empty())
             {
                 json errorResp;

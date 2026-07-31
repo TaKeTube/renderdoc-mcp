@@ -36,7 +36,25 @@ TEST(ToolRegistryTest, CallTool_UnknownName_Throws)
     renderdoc::core::Session s;
     renderdoc::core::DiffSession ds;
     ToolContext ctx{s, ds};
-    EXPECT_THROW(reg.callTool("nonexistent", ctx, {}), InvalidParamsError);
+    EXPECT_THROW(reg.callTool("nonexistent", ctx, {}), UnknownToolError);
+}
+
+TEST(ToolRegistryTest, InvalidToolName_Throws)
+{
+    ToolRegistry reg;
+    EXPECT_THROW(
+        registerDummy(reg, "invalid tool name",
+                      {{"type", "object"}, {"properties", nlohmann::json::object()}}),
+        std::logic_error);
+}
+
+TEST(ToolRegistryTest, ToolNameLongerThan128Characters_Throws)
+{
+    ToolRegistry reg;
+    EXPECT_THROW(
+        registerDummy(reg, std::string(129, 'a'),
+                      {{"type", "object"}, {"properties", nlohmann::json::object()}}),
+        std::logic_error);
 }
 
 TEST(ToolRegistryTest, RequiredFieldMissing_ThrowsInvalidParams)

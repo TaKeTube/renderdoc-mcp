@@ -12,6 +12,10 @@
 
 renderdoc-mcp 是一个基于 RenderDoc Replay API 的 MCP Server 和 CLI，提供 **65 个结构化工具**，让 AI 助手（Claude、Codex 等）可以直接打开 `.rdc` 抓帧、分析 GPU 帧、调试 Shader/像素、对比抓帧，并提取精确的 draw 数据用于独立重建 — 无需手动操作 UI。
 
+stdio Server 支持 MCP **2025-11-25** 协议，包括版本协商、Ping、结构化
+工具结果、标准化工具名称以及可由模型自行修正的工具参数错误；同时可以为旧
+客户端协商 `2025-06-18` 和 `2025-03-26`。
+
 ## 演示
 
 <p align="center">
@@ -22,6 +26,7 @@ renderdoc-mcp 是一个基于 RenderDoc Replay API 的 MCP Server 和 CLI，提�
 
 | 模块 | 能力 |
 |------|------|
+| MCP 协议 | 支持 `2025-11-25`，并兼容协商 `2025-06-18` 和 `2025-03-26` |
 | 会话与抓帧 | 打开抓帧、实时抓帧、查看元信息 |
 | 帧导航 | 列出事件/draw call、跳转到任意事件 |
 | 管线与 Shader | 查看管线状态、绑定、Shader 源码、常量缓冲区 |

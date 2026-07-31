@@ -3,6 +3,7 @@
 #include <nlohmann/json.hpp>
 #include "mcp/tool_registry.h"
 #include <memory>
+#include <string>
 
 namespace renderdoc::core { class Session; }
 namespace renderdoc::core { class DiffSession; }
@@ -21,7 +22,7 @@ public:
     // Process a single JSON-RPC message. Returns response JSON, or nullptr for notifications.
     nlohmann::json handleMessage(const nlohmann::json& msg);
 
-    // Process a JSON-RPC batch (array). Returns response array.
+    // Process a legacy JSON-RPC batch. Accepted only for MCP 2025-03-26.
     nlohmann::json handleBatch(const nlohmann::json& arr);
 
     void shutdown();
@@ -43,7 +44,9 @@ private:
     core::DiffSession* m_diffSession = nullptr;            // always valid (points to owned or injected)
     std::unique_ptr<ToolRegistry> m_ownedRegistry;        // owned, only set by default ctor
     ToolRegistry* m_registry = nullptr;                    // always valid (points to owned or injected)
+    bool m_initializeReceived = false;
     bool m_initialized = false;
+    std::string m_protocolVersion;
 };
 
 } // namespace renderdoc::mcp

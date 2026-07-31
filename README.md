@@ -12,6 +12,11 @@
 
 renderdoc-mcp is an MCP server and CLI that wraps the RenderDoc replay API into **65 structured tools**, letting AI assistants (Claude, Codex, etc.) open `.rdc` captures, inspect GPU frames, debug shaders/pixels, compare captures, and extract exact draw data for standalone reconstruction — all without manual UI.
 
+The stdio server supports MCP protocol revision **2025-11-25**, including
+version negotiation, ping, structured tool results, standardized tool names,
+and model-correctable tool input errors. It can negotiate `2025-06-18` and
+`2025-03-26` for older clients.
+
 ## Demo
 
 <p align="center">
@@ -22,6 +27,7 @@ renderdoc-mcp is an MCP server and CLI that wraps the RenderDoc replay API into 
 
 | Area | What you can do |
 |------|----------------|
+| MCP Protocol | `2025-11-25` with `2025-06-18` and `2025-03-26` negotiation compatibility |
 | Session & Capture | Open captures, live-capture frames, inspect metadata |
 | Frame Navigation | List events/draws, jump to any event |
 | Pipeline & Shaders | Inspect pipeline state, bindings, shader source, constant buffers |
