@@ -53,6 +53,7 @@ if(RENDERDOC_DIR)
         src/core/pass_analysis.cpp
         src/core/counters.cpp
         src/core/cbuffer.cpp
+        src/core/reconstruction.cpp
     )
     target_include_directories(renderdoc-core PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -125,6 +126,7 @@ if(RENDERDOC_DIR)
         src/mcp/tools/pass_tools.cpp
         src/mcp/tools/counter_tools.cpp
         src/mcp/tools/cbuffer_tools.cpp
+        src/mcp/tools/reconstruction_tools.cpp
     )
     target_link_libraries(renderdoc-mcp-lib PUBLIC renderdoc-mcp-proto renderdoc-core)
 

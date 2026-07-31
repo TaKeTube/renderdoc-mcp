@@ -65,7 +65,7 @@ TEST_F(McpServerTest, Initialize_ReturnsServerInfo)
     auto resp = m_server->handleMessage(makeRequest("initialize"));
     ASSERT_TRUE(resp.contains("result"));
     EXPECT_EQ(resp["result"]["serverInfo"]["name"], "renderdoc-mcp");
-    EXPECT_EQ(resp["result"]["protocolVersion"], "2025-03-26");
+    EXPECT_EQ(resp["result"]["protocolVersion"], "2025-06-18");
 }
 
 TEST_F(McpServerTest, Initialize_HasToolsCapability)
@@ -228,15 +228,23 @@ TEST_F(McpServerTest, Shutdown_ReturnsEmptyResult)
     EXPECT_TRUE(resp["result"].is_object());
 }
 
-TEST_F(McpServerTest, Initialize_UnsupportedProtocolVersion_ReturnsError)
+TEST_F(McpServerTest, Initialize_UnsupportedProtocolVersion_OffersLatestSupported)
 {
     auto resp = m_server->handleMessage(makeRequest("initialize",
         {{"protocolVersion", "9999-01-01"}}));
-    ASSERT_TRUE(resp.contains("error"));
-    EXPECT_EQ(resp["error"]["code"], -32602);
+    ASSERT_TRUE(resp.contains("result"));
+    EXPECT_EQ(resp["result"]["protocolVersion"], "2025-06-18");
 }
 
-TEST_F(McpServerTest, Initialize_MatchingProtocolVersion_Succeeds)
+TEST_F(McpServerTest, Initialize_LatestProtocolVersion_Succeeds)
+{
+    auto resp = m_server->handleMessage(makeRequest("initialize",
+        {{"protocolVersion", "2025-06-18"}}));
+    ASSERT_TRUE(resp.contains("result"));
+    EXPECT_EQ(resp["result"]["protocolVersion"], "2025-06-18");
+}
+
+TEST_F(McpServerTest, Initialize_LegacyProtocolVersion_Succeeds)
 {
     auto resp = m_server->handleMessage(makeRequest("initialize",
         {{"protocolVersion", "2025-03-26"}}));

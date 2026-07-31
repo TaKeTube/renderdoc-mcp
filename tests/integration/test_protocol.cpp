@@ -4,6 +4,7 @@
 #include <vector>
 #include <chrono>
 #include <thread>
+#include <set>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -250,7 +251,7 @@ protected:
         initReq["jsonrpc"] = "2.0";
         initReq["id"] = 0;
         initReq["method"] = "initialize";
-        initReq["params"]["protocolVersion"] = "2025-03-26";
+        initReq["params"]["protocolVersion"] = "2025-06-18";
         initReq["params"]["clientInfo"]["name"] = "test-runner";
         initReq["params"]["clientInfo"]["version"] = "1.0.0";
         initReq["params"]["capabilities"] = json::object();
@@ -326,6 +327,7 @@ TEST_F(ProtocolTest, InitializeHandshake)
     auto& result = s_initResponse["result"];
 
     EXPECT_TRUE(result.contains("protocolVersion"));
+    EXPECT_EQ(result["protocolVersion"], "2025-06-18");
     EXPECT_TRUE(result.contains("serverInfo"));
     EXPECT_TRUE(result["serverInfo"].contains("name"));
     EXPECT_EQ(result["serverInfo"]["name"], "renderdoc-mcp");
@@ -341,8 +343,18 @@ TEST_F(ProtocolTest, ToolsListComplete)
     ASSERT_TRUE((*resp)["result"].contains("tools"));
 
     auto& tools = (*resp)["result"]["tools"];
-    EXPECT_EQ(tools.size(), 59u)
-        << "Expected 59 tools, got " << tools.size();
+    EXPECT_EQ(tools.size(), 65u)
+        << "Expected 65 tools, got " << tools.size();
+
+    std::set<std::string> names;
+    for(const auto& tool : tools)
+        names.insert(tool["name"].get<std::string>());
+    EXPECT_TRUE(names.count("export_shader_binary"));
+    EXPECT_TRUE(names.count("get_descriptor_bindings"));
+    EXPECT_TRUE(names.count("export_texture_raw"));
+    EXPECT_TRUE(names.count("export_bound_buffer"));
+    EXPECT_TRUE(names.count("get_d3d12_pipeline_state_full"));
+    EXPECT_TRUE(names.count("export_draw_reconstruction_bundle"));
 }
 
 TEST_F(ProtocolTest, ParseError_MalformedJson)

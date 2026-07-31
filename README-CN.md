@@ -10,7 +10,7 @@
 
 ---
 
-renderdoc-mcp 是一个基于 RenderDoc Replay API 的 MCP Server 和 CLI，提供 **59 个结构化工具**，让 AI 助手（Claude、Codex 等）可以直接打开 `.rdc` 抓帧、分析 GPU 帧、调试 Shader/像素、对比抓帧、导出证据 — 无需手动操作 UI。
+renderdoc-mcp 是一个基于 RenderDoc Replay API 的 MCP Server 和 CLI，提供 **65 个结构化工具**，让 AI 助手（Claude、Codex 等）可以直接打开 `.rdc` 抓帧、分析 GPU 帧、调试 Shader/像素、对比抓帧，并提取精确的 draw 数据用于独立重建 — 无需手动操作 UI。
 
 ## 演示
 
@@ -28,7 +28,39 @@ renderdoc-mcp 是一个基于 RenderDoc Replay API 的 MCP Server 和 CLI，提�
 | 资源与 Pass | 分析帧结构、pass 依赖、资源使用情况 |
 | 像素与 Shader 调试 | 像素历史、拾取像素、调试像素/顶点/线程 |
 | 导出 | 渲染目标、纹理、Buffer、Mesh、快照 |
+| 精确 Draw Call 重建 | 原始 Shader 容器、已解析描述符、Raw 资源、完整 D3D12 状态和 draw 前后输出 |
 | Diff 与断言 | 对比两次抓帧，断言像素/状态/图片用于 CI |
+
+## 精确 Draw Call 重建
+
+对于已知的 D3D12 draw，renderdoc-mcp 可以导出构建独立 replay 所需的
+捕获状态和精确资源字节：
+
+```text
+目标 draw + draw 前事件
+  -> 导出 Shader、描述符、资源、Root/PSO 状态和 draw 前后输出
+  -> 在独立 D3D12 程序中重建 draw
+  -> Readback 并与捕获的 draw 后输出比较
+```
+
+| 工具 | 用途 |
+|------|------|
+| `export_draw_reconstruction_bundle` | 导出包含 manifest、校验和、输入、状态以及 draw 前后输出的重建包 |
+| `export_shader_binary` | 保留原始捕获的 DXBC/DXIL Shader 容器 |
+| `get_descriptor_bindings` | 将 Shader 绑定解析到实际描述符、资源、View、范围和 Sampler |
+| `export_texture_raw` | 导出紧密排列的 Raw 纹理子资源及布局元数据 |
+| `export_bound_buffer` | 导出精确的 CBV/SRV/UAV 范围或 Root Constants |
+| `get_d3d12_pipeline_state_full` | 导出 D3D12 PSO、Root、IA、光栅化、输出合并、Predication 和资源状态 |
+
+`manifest.complete=true` 只表示导出完整，并不单独证明独立 replay 正确。
+只有当 replay 输出与 `outputs/post` 逐字节一致，或者格式感知比较满足已记录
+的误差范围时，才算完成精确重建。
+
+当前 bundle exporter 仅支持 D3D12。在将重建包称为 replay-complete 前，
+需要检查 Raw IA Buffer、Indirect Command 数据、Mesh/Task 或光追管线以及
+MSAA 初始化等额外需求。事件时序、Agility SDK 预检、纹理上传、输出初始化、
+描述符布局和 mismatch 排查流程详见
+[精确 Draw Call 重建工作流](skills/renderdoc-mcp/references/draw-reconstruction.md)。
 
 ## 下载
 

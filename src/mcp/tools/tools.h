@@ -25,5 +25,6 @@ void registerDiffTools(ToolRegistry& registry);
 void registerPassTools(ToolRegistry& registry);
 void registerCounterTools(ToolRegistry& registry);
 void registerCBufferTools(ToolRegistry& registry);
+void registerReconstructionTools(ToolRegistry& registry);
 
 } // namespace renderdoc::mcp::tools

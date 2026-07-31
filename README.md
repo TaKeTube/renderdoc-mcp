@@ -10,7 +10,7 @@
 
 ---
 
-renderdoc-mcp is an MCP server and CLI that wraps the RenderDoc replay API into **59 structured tools**, letting AI assistants (Claude, Codex, etc.) open `.rdc` captures, inspect GPU frames, debug shaders/pixels, compare captures, and export evidence — all without manual UI.
+renderdoc-mcp is an MCP server and CLI that wraps the RenderDoc replay API into **65 structured tools**, letting AI assistants (Claude, Codex, etc.) open `.rdc` captures, inspect GPU frames, debug shaders/pixels, compare captures, and extract exact draw data for standalone reconstruction — all without manual UI.
 
 ## Demo
 
@@ -28,7 +28,41 @@ renderdoc-mcp is an MCP server and CLI that wraps the RenderDoc replay API into 
 | Resources & Passes | Analyze frame structure, pass dependencies, resource usage |
 | Pixel & Shader Debug | Pixel history, pick pixel, debug pixel/vertex/thread |
 | Export | Render targets, textures, buffers, meshes, snapshots |
+| Exact Draw Reconstruction | Original shader containers, resolved descriptors, raw resources, full D3D12 state, and pre/post outputs |
 | Diff & Assertions | Compare captures, assert pixels/state/images for CI |
+
+## Exact Draw Reconstruction
+
+For a known D3D12 draw, renderdoc-mcp can export the captured state and exact
+resource bytes needed to build a standalone replay:
+
+```text
+target draw + pre-draw event
+  -> export shaders, descriptors, resources, root/PSO state, and pre/post outputs
+  -> recreate the draw in a standalone D3D12 program
+  -> read back and compare against the captured post-draw output
+```
+
+| Tool | Purpose |
+|------|---------|
+| `export_draw_reconstruction_bundle` | Export a draw package with manifest, checksums, inputs, state, and pre/post outputs |
+| `export_shader_binary` | Preserve the original captured DXBC/DXIL shader container |
+| `get_descriptor_bindings` | Resolve shader bindings to actual descriptors, resources, views, ranges, and samplers |
+| `export_texture_raw` | Export tightly packed raw texture subresources and layout metadata |
+| `export_bound_buffer` | Export the exact CBV/SRV/UAV range or root constants |
+| `get_d3d12_pipeline_state_full` | Export D3D12 PSO, root, IA, rasterizer, output-merger, predication, and resource state |
+
+`manifest.complete=true` means the export is complete; it does not by itself
+prove that a standalone replay is correct. Exact reconstruction finishes when
+the replay output matches `outputs/post` byte-for-byte, or a format-aware
+comparison meets a documented tolerance.
+
+The current bundle exporter is D3D12-only. Audit raw IA buffers, indirect
+command data, mesh/task or ray-tracing pipelines, and MSAA initialization before
+calling a package replay-complete. See the
+[exact draw reconstruction workflow](skills/renderdoc-mcp/references/draw-reconstruction.md)
+for event timing, Agility SDK preflight, texture upload, output initialization,
+descriptor layout, and mismatch triage.
 
 ## Download
 
